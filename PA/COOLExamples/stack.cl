@@ -1,5 +1,5 @@
 -- Gabriel Santiago Delgado Lozano
-
+-- Fabio Esteban Murcia Martinez
 class Node{
     item: String;
     next: Node;
@@ -132,7 +132,6 @@ class Main inherits A2I{
             (new IO).out_string(s.tostring().concat("\n"));
             (new IO).out_string(i2a(s.getsize()).concat("\n"));
             *)
-
             s.push("A");
             (new IO).out_string(s.printTop().concat("\n"));
             (new IO).out_string(i2a(s.getsize()).concat("\n"));

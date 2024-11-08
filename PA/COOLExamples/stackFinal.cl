@@ -80,6 +80,7 @@ class Stack{
             else
                 {
                 top <- top.getPrevious();
+                top.setNext(nil);
                 size <- size - 1;
                 }
             fi;
