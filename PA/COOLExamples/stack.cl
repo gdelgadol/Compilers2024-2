@@ -1,78 +1,175 @@
--- Fabio Murcia
 -- Gabriel Santiago Delgado Lozano
 
-class List{
+class Node{
     item: String;
-    next: List;
-    prev: List;
+    next: Node;
+    prev: Node;
 
-    init(i: String, n:List): List{
+    init(i: String): SELF_TYPE {
         {
             item <- i;
+            self;
+        }
+    };
+
+    setNext(n: Node): SELF_TYPE{
+        {
+            next <- n;
+            self;
+        }
+    };
+
+    setPrev(n: Node): SELF_TYPE{
+        {
             prev <- n;
             self;
         }
     };
 
-    flatten(): String {
-        let string: String <-
-            case item of
-                i: Int => i2a(i);
-                s: String => s;
-                o: Object => {abort(); "";};
-            esac
-        in
-            if(isvoid next) then
-                string
-            else
-                string.concat(next.flatten())
-            fi
+    getPrevious(): Node{
+        prev
+    };
+
+    getNext(): Node{
+        next
+    };
+
+
+    printItem(): String{
+        let string: String <- item in string
+    };
+
+    printNext(): String{
+        let nextString: String <- next.printItem() in nextString
+    };
+
+    printPrev(): String{
+        let prevString: String <- prev.printItem() in prevString
     };
 };
 
 class Stack{
-    top: List;
+    top: Node;
     size: Int;
 
-    push(i: String): {
-        if (isvoid item) then
-            item <- i;
+    push(i: String): SELF_TYPE{
+        let n: Node <- (new Node).init(i)
+        in
+        {
             size <- size + 1;
-
+            if (isvoid top) then
+                top <- n
+            else
+                {
+                    top.setNext(n);
+                    n.setPrev(top);
+                    top <- n;
+                }
+            fi;
+            self;
+        }
     };
 
-    tostring(): String {
-        let string: String <-
-            case item of
-                i: Int => i2a(i);
-                s: String => s;
-                o: Object => {abort(); "";};
-            esac
+    pop(): SELF_TYPE{
+        let nil: Node 
         in
-            if(isvoid next) then
-                string
+        {
+            if (isvoid top) then
+                self
             else
-                string.concat(next.flatten())
-            fi
+                {
+                top <- top.getPrevious();
+                size <- size - 1;
+                }
+            fi;
+            self;
+        }
+    };
+
+    printTop(): String{
+        if (isvoid top) then
+            ""
+        else
+            let string: String <- top.printItem() in string
+        fi
+    };
+
+    getsize(): Int{
+        let si: Int <- size in si
+    };
+
+    tostring(): String{
+        let string: String,
+            currNode: Node <- top
+            in
+            {
+                while (not(isvoid currNode)) loop
+                {
+                    string <- string.concat(currNode.printItem());
+                    currNode <- currNode.getPrevious();
+                }
+                pool;
+                string;
+            }
     };
 };
 
-class Main inherits IO{
+class Main inherits A2I{
     main(): Object{
-        let s:Stack <- (new Stack) in
-            {
-                s.push("A");
-                s.push("B");
-                s.push("C");
-                out_string(s.tostring().concat("\n"));
+        let s: Stack <- (new Stack)
+            (*
+            n: Node <- (new Node).init("Hola "),
+            nt: Node <- (new Node).init("Mundo"),
+            pt: Node <- (new Node).init("!")
+            *)
+        in{
+            (*
+            n.setNext(nt);
+            n.setPrev(pt);
+            (new IO).out_string(n.printItem().concat("\n"));
+            (new IO).out_string(n.printNext().concat("\n"));
+            (new IO).out_string(n.printPrev().concat("\n"));
+            (new IO).out_string(s.tostring().concat("\n"));
+            (new IO).out_string(i2a(s.getsize()).concat("\n"));
+            *)
 
-                while(not ( s.getsize() = 0 )) loop
-                    {
-                        out_string(s.tostring().concat("\n"));
-                        s.pop();
-                    }
-                pool;
-                s;
-            }
+            s.push("A");
+            (new IO).out_string(s.printTop().concat("\n"));
+            (new IO).out_string(i2a(s.getsize()).concat("\n"));
+            (new IO).out_string(s.tostring().concat("\n"));
+            s.push("B");
+            (new IO).out_string(s.printTop().concat("\n"));
+            (new IO).out_string(i2a(s.getsize()).concat("\n"));
+            (new IO).out_string(s.tostring().concat("\n"));
+            s.push("C");
+            (new IO).out_string(s.printTop().concat("\n"));
+            (new IO).out_string(i2a(s.getsize()).concat("\n"));
+            (new IO).out_string(s.tostring().concat("\n"));
+            s.pop();
+            (new IO).out_string(s.printTop().concat("\n"));
+            (new IO).out_string(i2a(s.getsize()).concat("\n"));
+            (new IO).out_string(s.tostring().concat("\n"));
+            s.pop();
+            (new IO).out_string(s.printTop().concat("\n"));
+            (new IO).out_string(i2a(s.getsize()).concat("\n"));
+            (new IO).out_string(s.tostring().concat("\n"));
+            s.pop();
+            (new IO).out_string(s.printTop().concat("\n"));
+            (new IO).out_string(i2a(s.getsize()).concat("\n"));
+            (new IO).out_string(s.tostring().concat("\n"));
+            s.push("X");
+            (new IO).out_string(s.printTop().concat("\n"));
+            (new IO).out_string(i2a(s.getsize()).concat("\n"));
+            (new IO).out_string(s.tostring().concat("\n"));
+            s.push("Y");
+            (new IO).out_string(s.printTop().concat("\n"));
+            (new IO).out_string(i2a(s.getsize()).concat("\n"));
+            (new IO).out_string(s.tostring().concat("\n"));
+            s.push("Z");
+            (new IO).out_string(s.printTop().concat("\n"));
+            (new IO).out_string(i2a(s.getsize()).concat("\n"));
+            (new IO).out_string(s.tostring().concat("\n"));
+
+        }
     };
 };

@@ -10,7 +10,8 @@ class List inherits A2I{
         }
     };
 
-    flatten(): String {
+    flatten(): String 
+    {
         let string: String <-
             case item of
                 i: Int => i2a(i);
