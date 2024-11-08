@@ -37,15 +37,15 @@ class Node{
 
 
     printItem(): String{
-        let string: String <- item in string
+        item
     };
 
     printNext(): String{
-        let nextString: String <- next.printItem() in nextString
+        next.printItem()
     };
 
     printPrev(): String{
-        let prevString: String <- prev.printItem() in prevString
+        prev.printItem()
     };
 };
 
@@ -91,12 +91,12 @@ class Stack{
         if (isvoid top) then
             ""
         else
-            let string: String <- top.printItem() in string
+            top.printItem()
         fi
     };
 
     getsize(): Int{
-        let si: Int <- size in si
+        size
     };
 
     tostring(): String{

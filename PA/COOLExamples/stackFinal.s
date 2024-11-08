@@ -595,10 +595,10 @@ label7:
 	addiu	$sp $sp 20
 	jr	$ra	
 Stack.printTop:
-	addiu	$sp $sp -16
-	sw	$fp 16($sp)
-	sw	$s0 12($sp)
-	sw	$ra 8($sp)
+	addiu	$sp $sp -12
+	sw	$fp 12($sp)
+	sw	$s0 8($sp)
+	sw	$ra 4($sp)
 	addiu	$fp $sp 4
 	move	$s0 $a0
 	lw	$a0 12($s0)
@@ -621,27 +621,24 @@ label13:
 	lw	$t1 8($a0)
 	lw	$t1 32($t1)
 	jalr		$t1
-	move	$s1 $a0
-	move	$a0 $s1
 label11:
-	lw	$fp 16($sp)
-	lw	$s0 12($sp)
-	lw	$ra 8($sp)
-	addiu	$sp $sp 16
+	lw	$fp 12($sp)
+	lw	$s0 8($sp)
+	lw	$ra 4($sp)
+	addiu	$sp $sp 12
 	jr	$ra	
 Stack.getsize:
-	addiu	$sp $sp -16
-	sw	$fp 16($sp)
-	sw	$s0 12($sp)
-	sw	$ra 8($sp)
+	addiu	$sp $sp -12
+	sw	$fp 12($sp)
+	sw	$s0 8($sp)
+	sw	$ra 4($sp)
 	addiu	$fp $sp 4
 	move	$s0 $a0
-	lw	$s1 16($s0)
-	move	$a0 $s1
-	lw	$fp 16($sp)
-	lw	$s0 12($sp)
-	lw	$ra 8($sp)
-	addiu	$sp $sp 16
+	lw	$a0 16($s0)
+	lw	$fp 12($sp)
+	lw	$s0 8($sp)
+	lw	$ra 4($sp)
+	addiu	$sp $sp 12
 	jr	$ra	
 Stack.tostring:
 	addiu	$sp $sp -20
@@ -788,24 +785,23 @@ Node.getNext:
 	addiu	$sp $sp 12
 	jr	$ra	
 Node.printItem:
-	addiu	$sp $sp -16
-	sw	$fp 16($sp)
-	sw	$s0 12($sp)
-	sw	$ra 8($sp)
+	addiu	$sp $sp -12
+	sw	$fp 12($sp)
+	sw	$s0 8($sp)
+	sw	$ra 4($sp)
 	addiu	$fp $sp 4
 	move	$s0 $a0
-	lw	$s1 12($s0)
-	move	$a0 $s1
-	lw	$fp 16($sp)
-	lw	$s0 12($sp)
-	lw	$ra 8($sp)
-	addiu	$sp $sp 16
+	lw	$a0 12($s0)
+	lw	$fp 12($sp)
+	lw	$s0 8($sp)
+	lw	$ra 4($sp)
+	addiu	$sp $sp 12
 	jr	$ra	
 Node.printNext:
-	addiu	$sp $sp -16
-	sw	$fp 16($sp)
-	sw	$s0 12($sp)
-	sw	$ra 8($sp)
+	addiu	$sp $sp -12
+	sw	$fp 12($sp)
+	sw	$s0 8($sp)
+	sw	$ra 4($sp)
 	addiu	$fp $sp 4
 	move	$s0 $a0
 	lw	$a0 16($s0)
@@ -817,18 +813,16 @@ label21:
 	lw	$t1 8($a0)
 	lw	$t1 32($t1)
 	jalr		$t1
-	move	$s1 $a0
-	move	$a0 $s1
-	lw	$fp 16($sp)
-	lw	$s0 12($sp)
-	lw	$ra 8($sp)
-	addiu	$sp $sp 16
+	lw	$fp 12($sp)
+	lw	$s0 8($sp)
+	lw	$ra 4($sp)
+	addiu	$sp $sp 12
 	jr	$ra	
 Node.printPrev:
-	addiu	$sp $sp -16
-	sw	$fp 16($sp)
-	sw	$s0 12($sp)
-	sw	$ra 8($sp)
+	addiu	$sp $sp -12
+	sw	$fp 12($sp)
+	sw	$s0 8($sp)
+	sw	$ra 4($sp)
 	addiu	$fp $sp 4
 	move	$s0 $a0
 	lw	$a0 20($s0)
@@ -840,12 +834,10 @@ label22:
 	lw	$t1 8($a0)
 	lw	$t1 32($t1)
 	jalr		$t1
-	move	$s1 $a0
-	move	$a0 $s1
-	lw	$fp 16($sp)
-	lw	$s0 12($sp)
-	lw	$ra 8($sp)
-	addiu	$sp $sp 16
+	lw	$fp 12($sp)
+	lw	$s0 8($sp)
+	lw	$ra 4($sp)
+	addiu	$sp $sp 12
 	jr	$ra	
 Main.main:
 	addiu	$sp $sp -20
