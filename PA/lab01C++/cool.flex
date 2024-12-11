@@ -1,4 +1,4 @@
-/*
+/*  Gabriel Santiago Delgado Lozano, Fabio Esteban Murcia Martínez
  *  The scanner definition for COOL.
  */
 
