@@ -43,7 +43,6 @@ static int comment_level;  /*Variable para contar los niveles de anidación del 
 /*
  *  Add Your own definitions here
  */
-
 %}
 
 /*
@@ -117,52 +116,93 @@ TYPEIDEN        [A-Z][a-zA-Z0-9_]*
 
 "*)" {cool_yylval.error_msg = "Unmatched *)"; return ERROR; } /*Manejar error de cierre de comentario sin iniciar*/
 
-<INITIAL>'\"' {/*Inicialización de un string al detectar \"*/
-                string_buf[0] = '\0';
-                string_buf_ptr = string_buf;
-                BEGIN STRING;
-              }
+ /* Código extraído de github.com/skyzluo/CS143-Compilers-Stanford */
+<INITIAL>(\") {
+    BEGIN STRING;
+    yymore();
+}
 
-<STRING><<EOF>>  {
-                    string_buf[0] = '\0';
-                    cool_yylval.error_msg = "EOF in string constant";
-                    BEGIN 0;
-                    return ERROR;
-                  }
 
-<STRING>'\"'  { 
-                BEGIN INITIAL;
-                if (strlen(string_buf) > MAX_STR_CONST){
-                  string_buf[0] = '\0';
-                  cool_yylval.error_msg = "Undetermined string constant";
-                  return ERROR;
-                } else {
-                  cool_yylval.symbol = stringtable.add_string(string_buf);
-                  return STR_CONST;
-                }
-              }
+<STRING>[^\\\"\n]* { yymore(); }
 
-<STRING>\n  {
-              curr_lineno++;
-              string_buf[0] = '\0';
-              cool_yylval.error_msg = "Undetermined string constant";
-              BEGIN 0;
-              return ERROR;
-            }
 
-<STRING>\0  {
-              string_buf[0] = '\0';
-              cool_yylval.error_msg = "String contains null character";
-              BEGIN 0;
-              return ERROR;
-            }
+<STRING>\\[^\n] { yymore(); }
 
-<STRING>[^\\\n"\0]+ {
-                      *string_buf_ptr = yytext[0];
-                      string_buf_ptr++;
-                    }
 
-{DARROW}		{ return DARROW; }
+<STRING>\\\n {
+    curr_lineno++;
+    yymore();
+}
+
+
+<STRING><<EOF>> {
+    cool_yylval.error_msg = "EOF in string constant";
+    BEGIN 0;
+    yyrestart(yyin);
+    return ERROR;
+}
+
+
+<STRING>\n {
+    cool_yylval.error_msg = "String contains null character";
+    BEGIN 0;
+    curr_lineno++;
+    return ERROR;
+}
+
+
+<STRING>\\0 {
+    cool_yylval.error_msg = "String contains null character";
+    BEGIN 0;
+    return ERROR;
+}
+
+<STRING>\" {
+    std::string input(yytext, yyleng);
+    
+    input = input.substr(1, input.length() - 2);
+   
+    std::string output = "";
+    
+    std::string::size_type pos;
+    
+    if (input.find_first_of('\0') != std::string::npos) {
+        
+        cool_yylval.error_msg = "String contains null character";
+        BEGIN 0;
+        return ERROR;    
+    }
+    
+    while ((pos = input.find_first_of("\\")) != std::string::npos) {
+        
+        output += input.substr(0, pos);
+        
+        switch (input[pos + 1]) {
+            case 'b': output += "\b"; break;
+            case 't': output += "\t"; break;
+            case 'n': output += "\n"; break;
+            case 'f': output += "\f"; break;
+            default: output += input[pos + 1]; break;
+        }
+        
+        input = input.substr(pos + 2, input.length() - 2);
+    }
+    
+    output += input;
+    
+    if (output.length() >= MAX_STR_CONST) {
+        cool_yylval.error_msg = "Unterminated string constant";
+        BEGIN 0;
+        return ERROR;    
+    }
+    
+    cool_yylval.symbol = stringtable.add_string((char*)output.c_str());
+    BEGIN 0;
+    return STR_CONST;
+
+}
+
+{DARROW}    { return DARROW; }
 {LEQ}       { return LE; }
 {ASSIGN}    { return ASSIGN; }
 
@@ -217,14 +257,3 @@ TYPEIDEN        [A-Z][a-zA-Z0-9_]*
 . {cool_yylval.error_msg = yytext; return ERROR; }
   
 %%
-
-void append_string(char * yytext, int yyleng) {
-  int len = strlen(string_buf);
-  strncat(string_buf, yytext, MAX_STR_CONST - len);
-}
-
-void set_error_message(char * msg) {
-  string_buf[0] = '\0';
-  strcat(string_buf, msg);
-  cool_yylval.error_msg = string_buf;
-}
