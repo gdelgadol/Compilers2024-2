@@ -147,13 +147,6 @@ TYPEIDEN        [A-Z][a-zA-Z0-9_]*
     return ERROR;
 }
 
-
-<STRING>\\0 {
-    cool_yylval.error_msg = "String contains null character";
-    BEGIN 0;
-    return ERROR;
-}
-
 <STRING>\" {
     std::string input(yytext, yyleng);
     

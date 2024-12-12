@@ -134,7 +134,7 @@ TYPEIDEN        [A-Z][a-zA-Z0-9_]*
  /* Acumular todos los caractéres de escape (\c) excepto el \n */
 <STRING>\\[^\n] { yymore(); }
 
- /* Al final de una línea sale un \ y luego salto de línea */
+ /* Salto de línea con escape */
 <STRING>\\\n {
     curr_lineno++;
     yymore();
@@ -148,23 +148,18 @@ TYPEIDEN        [A-Z][a-zA-Z0-9_]*
     return ERROR;
 }
 
- /* Salto de línea sin escape */
+ /* Salto de línea sin \ de escape */
 <STRING>\n {
-    cool_yylval.error_msg = "String contains null character";
+    cool_yylval.error_msg = "Unterminated string constant";
     BEGIN 0;
     curr_lineno++;
     return ERROR;
 }
 
- /* Hay un caracter nulo */
-<STRING>\\0 {
-    cool_yylval.error_msg = "String contains null character";
-    BEGIN 0;
-    return ERROR;
-}
 
  /* Termina la cadena, ahora procesamos los caracteres de escape */
 <STRING>\" {
+    /* Crear string llamado input con contenido de yytext y su longitud */
     std::string input(yytext, yyleng);
     /* Eliminar las comillas de los extremos, sacando una subcadena de posición 1 hasta la n-2 */
     input = input.substr(1, input.length() - 2);
@@ -174,7 +169,7 @@ TYPEIDEN        [A-Z][a-zA-Z0-9_]*
     std::string::size_type pos;
     
     if (input.find_first_of('\0') != std::string::npos) {
-        //Se escapa el caracter nulo
+        //Está el caracter nulo
         cool_yylval.error_msg = "String contains null character";
         BEGIN 0;
         return ERROR;    
