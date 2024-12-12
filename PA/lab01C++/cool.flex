@@ -53,9 +53,6 @@ DARROW          =>
 LEQ             <=
 ASSIGN          <-
 
-LETTER          [a-zA-Z]
-LETTERS         {LETTER}+
-
 WHITESPACE      [ \t\f\v\r\x0b]+
 NEWLINE         [\n]
 
@@ -102,7 +99,7 @@ TYPEIDEN        [A-Z][a-zA-Z0-9_]*
 
 <COMMENT>[^\*\(\)\n]* { } /*Consumir caracteres en el comentario, excepto el salto de línea, paréntesis y asterisco*/
 
-<COMMENT>[\n] {curr_lineno++;}/*Salto de línea*/
+<COMMENT>{NEWLINE} {curr_lineno++;}/*Salto de línea*/
 
 <COMMENT>. { } /*Consumir los caracteres restantes*/ 
 
