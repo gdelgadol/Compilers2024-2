@@ -156,14 +156,14 @@ TYPEIDEN        [A-Z][a-zA-Z0-9_]*
     
     std::string::size_type pos;
     
-    if (input.find_first_of('\0') != -1) {
+    if (input.find_first_of('\0') != std::string::npos) {
         
         cool_yylval.error_msg = "String contains null character";
         BEGIN 0;
         return ERROR;    
     }
     
-    while ((pos = input.find_first_of("\\")) != -1) {
+    while ((pos = input.find_first_of("\\")) != std::string::npos) {
         
         output += input.substr(0, pos);
         
