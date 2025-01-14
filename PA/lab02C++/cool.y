@@ -1,7 +1,7 @@
 /*
 *  cool.y
 *              Parser definition for the COOL language.
-*
+*  Gabriel Santiago Delgado Lozano, Fabio Esteban Murcia Martínez 
 */
 %{
   #include <iostream>
@@ -133,12 +133,26 @@
     %type <program> program
     %type <classes> class_list
     %type <class_> class
-    
-    /* You will want to change the following line. */
-    %type <features> dummy_feature_list
-    
+    %type <formals> formal_list
+    %type <formal> formal
+    %type <expression> expression
+    %type <expressions> expression_list
+    %type <case_> branch
+    %type <cases> case_list
+    %type <features> feature_list
+    %type <feature> feature
+
     /* Precedence declarations go here. */
     
+    %left ASSIGN
+    %left NOT
+    %nonassoc LE '<' '='
+    %left '+' '-'
+    %left '*' '/'
+    %left ISVOID
+    %left '~'
+    %left '@'
+    %left '.'
     
     %%
     /* 
@@ -157,18 +171,33 @@
     ;
     
     /* If no parent is specified, the class inherits from the Object class. */
-    class	: CLASS TYPEID '{' dummy_feature_list '}' ';'
+    class	: CLASS TYPEID '{' feature_list '}' ';'
     { $$ = class_($2,idtable.add_string("Object"),$4,
     stringtable.add_string(curr_filename)); }
-    | CLASS TYPEID INHERITS TYPEID '{' dummy_feature_list '}' ';'
+    | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
     { $$ = class_($2,$4,$6,stringtable.add_string(curr_filename)); }
+    | error
     ;
     
     /* Feature list may be empty, but no empty features in list. */
-    dummy_feature_list:		/* empty */
+    feature_list:		/* empty */
     {  $$ = nil_Features(); }
-    
-    
+    ;
+
+    expression_list : expression { $$ = single_Expressions($1); }
+    | expression_list ',' expression { $$ = append_Expressions($1, single_Expressions($3)); }
+    | { $$ = nil_Expressions(); }
+    ;
+
+    expression : OBJECTID ASSIGN expression { $$ = assign($1,$3); }
+    | expression '@' TYPEID '.' OBJECTID '(' expression_list ')' { $$ = static_dispatch($1,$3,$5,$7); }
+    | OBJECTID '(' expression_list ')' { $$ = dispatch($1,$3,$2); }
+    | IF expression THEN expression ELSE expression FI { $$ = cond($2,$4,$6); }
+    | WHILE expression LOOP expression POOL { $$ = loop($2,$4); }
+    | '{' expression_list '}' { $$ = block($2); }
+    | LET OBJECTID ':' TYPEID IN expression { $$ = let($2,$4,$6,nil_Expression()); }
+    ;
+
     /* end of grammar */
     %%
     
