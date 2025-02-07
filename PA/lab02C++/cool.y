@@ -1,7 +1,8 @@
 /*
 *  cool.y
 *              Parser definition for the COOL language.
-*
+*               Gabriel Santiago Delgado Lozano
+*               Fabio Esteban Murcia Martínez
 */
 %{
     #include <iostream>
