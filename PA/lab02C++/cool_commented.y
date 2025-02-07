@@ -369,7 +369,7 @@ branch : OBJECTID ':' TYPEID DARROW expression { $$ = branch($1, $3, $5); } ;
 while_exp : WHILE nonempty_expr LOOP expression POOL
           { $$ = loop($2, $4); }
 
-          | WHILE nonempty_expr LOOP error // this is a hack to make the grading script happy (it's not beautiful)
+          | WHILE nonempty_expr LOOP error
           { }
 
           ;
