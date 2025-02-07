@@ -167,198 +167,124 @@ class_list : class { $$ = single_Classes($1); parse_results = $$; }
 
             | class_list class { $$ = append_Classes($1, single_Classes($2)); parse_results = $$; };
 
-class : CLASS TYPEID '{' feature_list '}' ';'
-      { $$ = class_($2, idtable.add_string("Object"), $4, stringtable.add_string(curr_filename));}
+class : CLASS TYPEID '{' feature_list '}' ';' { $$ = class_($2, idtable.add_string("Object"), $4, stringtable.add_string(curr_filename));}
       
-      | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';'
-      { $$ = class_($2, $4, $6, stringtable.add_string(curr_filename)); }
+      | CLASS TYPEID INHERITS TYPEID '{' feature_list '}' ';' { $$ = class_($2, $4, $6, stringtable.add_string(curr_filename)); }
 
       | error ;
 
-feature_list : nonempty_feature_list
-             { $$ = $1; }
+feature_list : nonempty_feature_list { $$ = $1; }
 
-             |
-             { $$ = nil_Features(); } //feature1; feature2;
-             ;
+             | { $$ = nil_Features(); } ;
 
-nonempty_feature_list : feature ';' nonempty_feature_list
-                      { $$ = append_Features(single_Features($1), $3); }
+nonempty_feature_list : feature ';' nonempty_feature_list { $$ = append_Features(single_Features($1), $3); }
 
-                      | feature ';'
-                      { $$ = single_Features($1); }
-                      ;
+                      | feature ';' { $$ = single_Features($1); } ;
 
-feature : OBJECTID '(' formal_list ')' ':' TYPEID '{' nonempty_expr '}'
-        { $$ = method($1, $3, $6, $8); }
+feature : OBJECTID '(' formal_list ')' ':' TYPEID '{' nonempty_expr '}' { $$ = method($1, $3, $6, $8); }
 
-        | OBJECTID ':' TYPEID
-        { $$ = attr($1, $3, no_expr()); }
+        | OBJECTID ':' TYPEID { $$ = attr($1, $3, no_expr()); }
 
-        | OBJECTID ':' TYPEID ASSIGN expression
-        { $$ = attr($1, $3, $5); }
-
+        | OBJECTID ':' TYPEID ASSIGN expression { $$ = attr($1, $3, $5); }
+        
         | error ;
 
-formal_list : nonempty_formal_list
-            { $$ = $1; }
+formal_list : nonempty_formal_list { $$ = $1; }
 
-            |
-            { $$ = nil_Formals(); }
-            
-            ;
+            | { $$ = nil_Formals(); } ;
 
-nonempty_formal_list : formal ',' nonempty_formal_list
-                     { $$ = append_Formals(single_Formals($1), $3); }
+nonempty_formal_list : formal ',' nonempty_formal_list { $$ = append_Formals(single_Formals($1), $3); }
 
-                     | formal
-                     { $$ = single_Formals($1); }
-
-                     ;
+                     | formal { $$ = single_Formals($1); };
 
 formal : OBJECTID ':' TYPEID { $$ = formal($1, $3); } ;
 
-expression_list : expression_list ',' nonempty_expr
-                { $$ = append_Expressions($1, single_Expressions($3)); }
+expression_list : expression_list ',' nonempty_expr { $$ = append_Expressions($1, single_Expressions($3)); }
 
-                | nonempty_expr
-                { $$ = single_Expressions($1); }
+                | nonempty_expr { $$ = single_Expressions($1); }
 
-                |
-                { $$ = nil_Expressions(); }
-                
-                ;
-
-expression : nonempty_expr
-           { $$ = $1; }
-
-           |
-           { $$ = no_expr(); }
-
-           ;
+                | { $$ = nil_Expressions(); } ;
 
 
-nonempty_block : nonempty_expr ';'
-               { $$ = single_Expressions($1); }
+nonempty_block : nonempty_expr ';' { $$ = single_Expressions($1); }
 
-               | nonempty_expr ';' nonempty_block
-               { $$ = append_Expressions(single_Expressions($1), $3); }
+               | nonempty_expr ';' nonempty_block { $$ = append_Expressions(single_Expressions($1), $3); }
                
-               | error
-               
-               ;
+               | error ;
 
-case_list : case_list branch ';'
-          { $$ = append_Cases($1, single_Cases($2)); }
+case_list : case_list branch ';' { $$ = append_Cases($1, single_Cases($2)); }
 
-          | branch ';'
-          { $$ = single_Cases($1); }
-          
-          ;
-
-while_exp : WHILE nonempty_expr LOOP expression POOL
-          { $$ = loop($2, $4); }
-
-          | WHILE nonempty_expr LOOP error
-          { }
-
-          ;
+          | branch ';' { $$ = single_Cases($1); } ;
 
 branch : OBJECTID ':' TYPEID DARROW expression { $$ = branch($1, $3, $5); } ;
 
-inner_let : OBJECTID ':' TYPEID ASSIGN expression IN expression
-          { $$ = let($1, $3, $5, $7); }
+inner_let : OBJECTID ':' TYPEID ASSIGN expression IN expression { $$ = let($1, $3, $5, $7); }
 
-          | OBJECTID ':' TYPEID IN expression
-          { $$ = let($1, $3, no_expr(), $5); }
+          | OBJECTID ':' TYPEID IN expression { $$ = let($1, $3, no_expr(), $5); }
 
-          | OBJECTID ':' TYPEID ASSIGN expression ',' inner_let
-          { $$ = let($1, $3, $5, $7); }
+          | OBJECTID ':' TYPEID ASSIGN expression ',' inner_let { $$ = let($1, $3, $5, $7); }
 
-          | OBJECTID ':' TYPEID ',' inner_let
-          { $$ = let($1, $3, no_expr(), $5); }
-          
-          ;
+          | OBJECTID ':' TYPEID ',' inner_let { $$ = let($1, $3, no_expr(), $5); } ;
 
-nonempty_expr : OBJECTID ASSIGN nonempty_expr
-              { $$ = assign($1, $3); }
+expression : nonempty_expr { $$ = $1; }
 
-              | nonempty_expr '@' TYPEID '.' OBJECTID '(' expression_list ')'
-              { $$ = static_dispatch($1, $3, $5, $7); }
+           | { $$ = no_expr(); } ;
 
-              | nonempty_expr '.' OBJECTID '(' expression_list ')'
-              { $$ = dispatch($1, $3, $5); }
+nonempty_expr : OBJECTID ASSIGN nonempty_expr { $$ = assign($1, $3); }
 
-              | OBJECTID '(' expression_list ')'
-              { $$ = dispatch(object(idtable.add_string("self")), $1, $3); }
+              | nonempty_expr '@' TYPEID '.' OBJECTID '(' expression_list ')' { $$ = static_dispatch($1, $3, $5, $7); }
 
-              | IF nonempty_expr THEN nonempty_expr ELSE nonempty_expr FI
-              { $$ = cond($2, $4, $6); }
+              | nonempty_expr '.' OBJECTID '(' expression_list ')' { $$ = dispatch($1, $3, $5); }
 
-              | while_exp
-              { $$ = $1; }
+              | OBJECTID '(' expression_list ')' { $$ = dispatch(object(idtable.add_string("self")), $1, $3); }
 
-              | '{' nonempty_block '}'
-              { $$ = block($2); }
+              | IF nonempty_expr THEN nonempty_expr ELSE nonempty_expr FI { $$ = cond($2, $4, $6); }
 
-              | LET inner_let
-              { $$ = $2; }
+              | while_exp { $$ = $1; }
 
-              | CASE nonempty_expr OF case_list ESAC
-              { $$ = typcase($2, $4); }
+              | '{' nonempty_block '}' { $$ = block($2); }
 
-              | NEW TYPEID
-              { $$ = new_($2); }
+              | LET inner_let { $$ = $2; }
 
-              | ISVOID nonempty_expr
-              { $$ = isvoid($2); }
+              | CASE nonempty_expr OF case_list ESAC { $$ = typcase($2, $4); }
 
-              | nonempty_expr '+' nonempty_expr
-              { $$ = plus($1, $3); }
+              | NEW TYPEID { $$ = new_($2); }
 
-              | nonempty_expr '-' nonempty_expr
-              { $$ = sub($1, $3); }
+              | ISVOID nonempty_expr { $$ = isvoid($2); }
 
-              | nonempty_expr '*' nonempty_expr
-              { $$ = mul($1, $3); }
+              | nonempty_expr '+' nonempty_expr { $$ = plus($1, $3); }
 
-              | nonempty_expr '/' nonempty_expr
-              { $$ = divide($1, $3); }
+              | nonempty_expr '-' nonempty_expr { $$ = sub($1, $3); }
 
-              | '~' nonempty_expr
-              { $$ = neg($2); }
+              | nonempty_expr '*' nonempty_expr { $$ = mul($1, $3); }
 
-              | nonempty_expr '<' nonempty_expr
-              { $$ = lt($1, $3); }
+              | nonempty_expr '/' nonempty_expr { $$ = divide($1, $3); }
 
-              | nonempty_expr LE nonempty_expr
-              { $$ = leq($1, $3); }
+              | '~' nonempty_expr { $$ = neg($2); }
 
-              | nonempty_expr '=' nonempty_expr
-              { $$ = eq($1, $3); }
+              | nonempty_expr '<' nonempty_expr { $$ = lt($1, $3); }
 
-              | NOT nonempty_expr
-              { $$ = comp($2); }
+              | nonempty_expr LE nonempty_expr { $$ = leq($1, $3); }
 
-              | '(' nonempty_expr ')'
-              { $$ = $2; }
+              | nonempty_expr '=' nonempty_expr { $$ = eq($1, $3); }
 
-              | OBJECTID
-              { $$ = object($1); }
+              | NOT nonempty_expr { $$ = comp($2); }
 
-              | INT_CONST
-              { $$ = int_const($1); }
+              | '(' nonempty_expr ')' { $$ = $2; }
+
+              | OBJECTID { $$ = object($1); }
+
+              | INT_CONST { $$ = int_const($1); }
               
-              | STR_CONST
-              { $$ = string_const($1); }
+              | STR_CONST { $$ = string_const($1); }
 
-              | BOOL_CONST
-              { $$ = bool_const($1); }
+              | BOOL_CONST { $$ = bool_const($1); }
 
-              | error
-              { }
-              
-              ;
+              | error { } ;
+
+while_exp : WHILE nonempty_expr LOOP expression POOL { $$ = loop($2, $4); }
+
+          | WHILE nonempty_expr LOOP error { } ;
 
 /* end of grammar */
 %%
