@@ -178,7 +178,8 @@ documentation for details). */
     - @$: Se refiere a la ubicación de la parte izquierda de la producción.
     - $$ = $i: Asigna el valor semántico del i-ésimo símbolo al valor semántico de la parte izquierda de la producción.
     - @$ = @i: Asigna la ubicación del i-ésimo símbolo a la ubicación de la parte izquierda de la producción.
-    - $$ = function($1, $2, ...): Asigna el valor de la función con los valores semánticos de los símbolos al valor semántico de la parte izquierda de la producción.
+    - $$ = function($1, $2, ...): Asigna el valor de la función con los valores semánticos 
+           de los símbolos al valor semántico de la parte izquierda de la producción.
     - function($1, $2, ...): Llamada a la función con los valores semánticos de los símbolos.
 */
 
