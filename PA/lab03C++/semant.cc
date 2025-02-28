@@ -95,7 +95,7 @@ typedef SymbolTable<Symbol, method_class> MethodTable;
 // Se usa para almacenar y consultar métodos definidos en cada clase, validando herencia y sobreescritura.
 static std::map<Symbol, MethodTable> methodtables;
 
-
+//Partes extraídas de: https://github.com/skyzluo/CS143-Compilers-Stanford
 //
 // Initializing the predefined symbols.
 //
@@ -168,8 +168,11 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
     }
 
     // ==============================================
-    // Validación de la herencia
+    // Validación de la herencia despues de ingresar todas las clases
     // ==============================================
+    // classes-> first() Devuelve el indice del primer elemento de la lista (Object)
+    // classes-> more(i) Verifica si hay mas clases
+    // classes-> next(i) Avanza al siguiente indice
     for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
 
         // Se establece la clase actual para la verificación de herencia
@@ -257,14 +260,15 @@ ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) 
 //     some valid programs, but it will not tolerate any invalid program.
 // 
 bool ClassTable::CheckInheritance(Symbol ancestor, Symbol child) {
+    //Si ambos son SELF_TYPE, true porque xd mismo tipo dinámico
     if (ancestor == SELF_TYPE) {
         return child == SELF_TYPE;
     }
-
+    //Si el hijo de SELF_TYPE, entonces se le asigna el nombre de la clase actual
     if (child == SELF_TYPE) {
         child = curr_class->GetName();
     }
-
+    //Itera todo el recorrido de herencia hasta llegar a No_class. Si llega, falso porque no hay ancestro.
     for (; child != No_class; child = m_classes.find(child)->second->GetParent()) {
         if (child == ancestor) {
             return true;
@@ -320,6 +324,7 @@ Symbol ClassTable::FindCommonAncestor(Symbol type1, Symbol type2) {
     std::list<Symbol>::iterator iter1 = path1.begin(),
                                 iter2 = path2.begin();
 
+    //Iterar e incrementar las dos listas hasta encontrarse con el mismo elemento
     while (iter1 != path1.end() && iter2 != path2.end()) {
         if (*iter1 == *iter2) {
             ret = *iter1;
@@ -330,7 +335,7 @@ Symbol ClassTable::FindCommonAncestor(Symbol type1, Symbol type2) {
         iter1++;
         iter2++;
     }
-
+    //Retorna object si no hay ancestro común
     return ret;
 }
 
@@ -445,7 +450,7 @@ void ClassTable::install_basic_classes() {
                 append_Features(
                     append_Features(
                         single_Features(attr(val, Int, no_expr())),
-                        single_Features(attr(str_field, prim_slot, no_expr()))
+                        single_Features(attr(str_field, prim_slot, no_expr())) //Prim_slot representa espacio de memoria reservados
                         ),
                     single_Features(method(length, nil_Formals(), Int, no_expr()))
                     ),
@@ -515,6 +520,12 @@ ostream& ClassTable::semant_error()
 ///////////////////////////////////////////////////////////////////
 // Add to attrib / method table
 ///////////////////////////////////////////////////////////////////
+
+//Tanto method como attribute son Features, por lo tanto, features debe tener una
+//función para meter a la tabla de métodos y otro para meter a la tabla de atributos.
+//Como heredan, entonces deben tener el otro método tal que no haga nada.
+//Por ejemplo, AddMethodTable está definido en method_class pero AddAttribToTable no hace nada.
+//Debe declararse, de todas formas.
 
 void method_class::AddMethodToTable(Symbol class_name) {
     log << "    Adding method " << name << std::endl;
