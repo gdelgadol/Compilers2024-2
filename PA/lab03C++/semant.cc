@@ -553,108 +553,176 @@ void attr_class::AddAttribToTable(Symbol class_name) {
 ///////////////////////////////////////////////////////////////////
 // Type checking functions
 ///////////////////////////////////////////////////////////////////
+// EN ESTO DEFINIMOS LAS FUNCIONES PARA VERIFICAR LOS TIPOS DE CADA EXPRESIÓN
+
 void method_class::CheckFeatureType() {
+    // Imprime en el log que se está verificando el método actual
     log << "    Checking method \"" << name << "\"" << std::endl;
 
+    // Verifica que el tipo de retorno del método exista en la tabla de clases
+    // SELF_TYPE es una excepción y no necesita estar en la tabla
     if (classtable->m_classes.find(return_type) == classtable->m_classes.end() && return_type != SELF_TYPE) {
-        classtable->semant_error(curr_class) << "Error! return type " << return_type << " doesn't exist." << std::endl;
+        classtable->semant_error(curr_class) 
+            << "Error! return type " << return_type << " doesn't exist." << std::endl;
     }
+
+    // Inicia un nuevo scope en la tabla de atributos para registrar los parámetros del método
     attribtable.enterscope();
+
+    // Conjunto para almacenar los nombres de los parámetros y detectar duplicados
     std::set<Symbol> used_names;
+
+    // Itera sobre todos los parámetros del método
     for (int i = formals->first(); formals->more(i); i = formals->next(i)) {
         Symbol name = formals->nth(i)->GetName();
+
+        // Verifica si el nombre del parámetro ya ha sido usado en este método
         if (used_names.find(name) != used_names.end()) {
-            classtable->semant_error(curr_class) << "Error! formal name duplicated. " << std::endl;
+            classtable->semant_error(curr_class) 
+                << "Error! formal name duplicated. " << std::endl;
         } else {
             used_names.insert(name);
         }
 
+        // Obtiene el tipo del parámetro y verifica que exista en la tabla de clases
         Symbol type = formals->nth(i)->GetType();
         if (classtable->m_classes.find(type) == classtable->m_classes.end()) {
-            classtable->semant_error(curr_class) << "Error! Cannot find class " << type << std::endl;
+            classtable->semant_error(curr_class) 
+                << "Error! Cannot find class " << type << std::endl;
         }
+
+        // Verifica que el nombre del parámetro no sea 'self'
         if (formals->nth(i)->GetName() == self) {
-            classtable->semant_error(curr_class) << "Error! self in formal " << std::endl;
+            classtable->semant_error(curr_class) 
+                << "Error! self in formal " << std::endl;
         }
+
+        // Agrega el parámetro a la tabla de atributos para que pueda ser usado dentro del método
         attribtable.addid(formals->nth(i)->GetName(), new Symbol(formals->nth(i)->GetType()));
     }
     
+    // Obtiene el tipo de la expresión de retorno del método
     Symbol expr_type = expr->CheckExprType();
+
+    // Verifica que el tipo de retorno del método sea un ancestro válido del tipo de la expresión
     if (classtable->CheckInheritance(return_type, expr_type) == false) {
-        classtable->semant_error(curr_class) << "Error! return type is not ancestor of expr type. " << std::endl;
+        classtable->semant_error(curr_class) 
+            << "Error! return type is not ancestor of expr type. " << std::endl;
     }
+
+    // Sale del scope del método, eliminando los parámetros de la tabla de atributos
     attribtable.exitscope();
 }
 
-void attr_class::CheckFeatureType() {
-    log << "    Checking atribute \"" << name << "\"" << std::endl;
 
+void attr_class::CheckFeatureType() {
+    log << "    Checking attribute \"" << name << "\"" << std::endl;
+
+    // Verifica si la expresión de asignación tiene tipo No_type (no está inicializada)
     if (init->CheckExprType() == No_type) {
         log << "NO INIT!" << std::endl;
     }
 }
 
-Symbol assign_class::CheckExprType() {
+
+Symbol assign_class::CheckExprType() { 
+    // Busca el tipo de la variable en la tabla de atributos
     Symbol* lvalue_type = attribtable.lookup(name);
+
+    // Obtiene el tipo de la expresión del lado derecho
     Symbol rvalue_type = expr->CheckExprType();
+
+    // Verifica si la variable existe en la tabla de atributos
     if (lvalue_type == NULL) {
+        // Si la variable no está definida, genera un error semántico
         classtable->semant_error(curr_class) << "Error! Cannot find lvalue " << name << std::endl;
+
+        // Asigna el tipo "Object" como valor por defecto para evitar más errores
         type = Object;
         return type;
     }
+
+    // Verifica si el tipo del lvalue es un ancestro válido del rvalue
     if (classtable->CheckInheritance(*lvalue_type, rvalue_type) == false) {
-        classtable->semant_error(curr_class) << "Error! lvalue is not an ancestor of rvalue. " << std::endl;
+        // Si no es un ancestro válido, genera un error semántico
+        classtable->semant_error(curr_class) 
+            << "Error! lvalue is not an ancestor of rvalue. " << std::endl;
+
+        // Asigna el tipo "Object" para evitar más errores
         type = Object;
         return type;
     }
+
+    // Si no hay errores, asigna el tipo del rvalue como tipo final de la expresión
     type = rvalue_type;
     return type;
 }
-
+//(obj@Clase).metodo(param1, param2, ...)
 Symbol static_dispatch_class::CheckExprType() {
+    // Variable para rastrear si se encuentra algún error
     bool error = false;
 
+    // Arroja el tipo sobre el que llamamos el método (obj) 
     Symbol expr_class = expr->CheckExprType();
 
+    // Verifica que el type_name (Clase) sea ancestro de expr_class (obj)
     if (classtable->CheckInheritance(type_name, expr_class) == false) {
         error = true;
-        classtable->semant_error(curr_class) << "Error! Static dispatch class is not an ancestor." << std::endl;
+        classtable->semant_error(curr_class) 
+            << "Error! Static dispatch class is not an ancestor." << std::endl;
     }
 
     log << "Static dispatch: class = " << type_name << std::endl;
 
-    // Find the method along the inheritance path.
-    // We want the definition in a subclass.
+    // Busca el método en la jerarquía de herencia
+    // Se recorre el camino de herencia de type_name (Class) para encontrar la definición del método
     std::list<Symbol> path = classtable->GetInheritancePath(type_name);
     method_class* method = NULL;
+
     for (std::list<Symbol>::iterator iter = path.begin(); iter != path.end(); ++iter) {
         log << "Looking for method in class " << *iter << std::endl;
+
+        // Busca el método en la tabla de métodos de la clase actual en la jerarquía
         if ((method = methodtables[*iter].lookup(name)) != NULL) {
-            break;
+            break;  // Si se encuentra el método, se detiene la búsqueda
         }
     }
 
+    // Si no se encuentra el método en la jerarquía de herencia, se genera un error
     if (method == NULL) {
         error = true;
-        classtable->semant_error(curr_class) << "Error! Cannot find method '" << name << "'" << std::endl;
+        classtable->semant_error(curr_class) 
+            << "Error! Cannot find method '" << name << "'" << std::endl;
     }
 
-    // Check the params.
+    // Verificación de los parámetros pasados al método
     for (int i = actual->first(); actual->more(i); i = actual->next(i)) {
+        // Obtiene el tipo del parámetro de la iteración
         Symbol actual_type = actual->nth(i)->CheckExprType();
+
+        // Como el parser sigue, solo ejecutamos si encontramos el método
         if (method != NULL) {
+            // Obtenemos el tipo del formal en la posición actual
             Symbol formal_type = method->GetFormals()->nth(i)->GetType();
+
+            // Verifica que el tipo del argumento sea un subtipo del tipo esperado
             if (classtable->CheckInheritance(formal_type, actual_type) == false) {
-                classtable->semant_error(curr_class) << "Error! Actual type " << actual_type << " doesn't suit formal type " << formal_type << std::endl;
+                classtable->semant_error(curr_class) 
+                    << "Error! Actual type " << actual_type 
+                    << " doesn't suit formal type " << formal_type << std::endl;
                 error = true;
             }
         }
     }
 
+    // Si hubo errores, se asigna Object como tipo de retorno para evitar problemas
     if (error) {
         type = Object;
     } else {
+        // Si no hay errores, el tipo de la expresión es el tipo de retorno del método
         type = method->GetType();
+
+        // Si el método retorna SELF_TYPE, se reemplaza por la clase sobre la que se hizo dispatch
         if (type == SELF_TYPE) {
             type = type_name;
         }
@@ -663,49 +731,71 @@ Symbol static_dispatch_class::CheckExprType() {
     return type;
 }
 
+//obj.metodo(param1, param2, ...)
 Symbol dispatch_class::CheckExprType() {
+    // Variable para rastrear si hay errores durante la verificación del dispatch
     bool error = false;
 
+    // Arroja el tipo sobre el que llamamos el método
     Symbol expr_type = expr->CheckExprType();
 
+    // Si el tipo de la expresión es SELF_TYPE, se imprime en el log con el nombre de la clase actual
     if (expr_type == SELF_TYPE) {
         log << "Dispatch: class = " << SELF_TYPE << "_" << curr_class->GetName() << std::endl;
     } else {
         log << "Dispatch: class = " << expr_type << std::endl;
     }
 
-    // Find the method along the inheritance path.
-    // We want the definition in a subclass.
+    // Busca el método en la jerarquía de herencia de la clase del objeto en el dispatch
+    // Se busca la definición del método en la clase más cercana posible en la jerarquía
     std::list<Symbol> path = classtable->GetInheritancePath(expr_type);
     method_class* method = NULL;
+
+    // Se recorre la jerarquía de herencia para encontrar el método
     for (std::list<Symbol>::iterator iter = path.begin(); iter != path.end(); ++iter) {
         log << "Looking for method in class " << *iter << std::endl;
+
+        // Busca el método en la tabla de métodos de la clase actual de la jerarquía
         if ((method = methodtables[*iter].lookup(name)) != NULL) {
-            break;
+            break; // Si encuentra el método, se detiene la búsqueda
         }
     }
 
+    // Si el método no se encuentra en ninguna clase de la jerarquía, se genera un error
     if (method == NULL) {
         error = true;
-        classtable->semant_error(curr_class) << "Error! Cannot find method '" << name << "'" << std::endl;
+        classtable->semant_error(curr_class) 
+            << "Error! Cannot find method '" << name << "'" << std::endl;
     }
 
-    // Check the params.
+    // Verificación de los parámetros de la llamada al método
     for (int i = actual->first(); actual->more(i); i = actual->next(i)) {
+        // Se obtiene el tipo del argumento pasado en la llamada al método
         Symbol actual_type = actual->nth(i)->CheckExprType();
+
+        // Solo se realiza la verificación si el método fue encontrado
         if (method != NULL) {
+            // Se obtiene el tipo esperado del parámetro en la declaración del método
             Symbol formal_type = method->GetFormals()->nth(i)->GetType();
+
+            // Se verifica que el argumento pasado sea un subtipo válido del parámetro esperado
             if (classtable->CheckInheritance(formal_type, actual_type) == false) {
-                classtable->semant_error(curr_class) << "Error! Actual type " << actual_type << " doesn't suit formal type " << formal_type << std::endl;
+                classtable->semant_error(curr_class) 
+                    << "Error! Actual type " << actual_type 
+                    << " doesn't suit formal type " << formal_type << std::endl;
                 error = true;
             }
         }
     }
 
+    // Si hubo errores en el dispatch, se asigna Object como tipo de retorno para evitar problemas
     if (error) {
         type = Object;
     } else {
+        // Si no hubo errores, el tipo de la expresión será el tipo de retorno del método
         type = method->GetType();
+
+        // Si el método retorna SELF_TYPE, se reemplaza por el tipo de la expresión original
         if (type == SELF_TYPE) {
             type = expr_type;
         }
@@ -714,6 +804,7 @@ Symbol dispatch_class::CheckExprType() {
     return type;
 }
 
+
 // condition
 // =========
 // Expression pred;
@@ -721,26 +812,31 @@ Symbol dispatch_class::CheckExprType() {
 // Expression else_exp;
 // 
 Symbol cond_class::CheckExprType() {
+    //Si el predicado del condicional no es booleano, retorna error
     if (pred->CheckExprType() != Bool) {
         classtable->semant_error(curr_class) << "Error! Type of pred is not Bool." << std::endl;
     }
 
+    //Miramos el tipo de las expresiones en el then y en el else
     Symbol then_type = then_exp->CheckExprType();
     Symbol else_type = else_exp->CheckExprType();
 
     if (else_type == No_type) {
-        // if there is no 'else'
+        // Si no hay un else, el tipo del condicional es el del then
         type = then_type;
     } else {
         type = classtable->FindCommonAncestor(then_type, else_type);
+        //Verificamos el ancestro común entre el then y el else. Ese será el tipo de esta expresión.
     }
     return type;
 }
 
 Symbol loop_class::CheckExprType() {
+    //Si el predicado del condicional no es booleano, retorna error
     if (pred->CheckExprType() != Bool) {
         classtable->semant_error(curr_class) << "Error! Type of pred is not Bool." << std::endl;
     }
+    //Miramos el tipo de la expresión del cuerpo
     body->CheckExprType();
     type = Object;
     return type;
@@ -752,20 +848,27 @@ Symbol loop_class::CheckExprType() {
 // Cases cases;
 // 
 Symbol typcase_class::CheckExprType() {
-
+    //Obtener el tipo de la expresión que evalúa el case
     Symbol expr_type = expr->CheckExprType();
 
     Case branch;
+    //Almacena los retornos de cada rama
     std::vector<Symbol> branch_types;
+    //Almacena los tipos declarados en cada rama
     std::vector<Symbol> branch_type_decls;
 
+    //Recorrer cada rama, obtener el retorno de cada rama, obtener el retorno de la declaración
     for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
         branch = cases->nth(i);
         Symbol branch_type = branch->CheckBranchType();
         branch_types.push_back(branch_type);
         branch_type_decls.push_back(((branch_class *)branch)->GetTypeDecl());
     }
-
+    //Verificar que no haya tipos duplicados en las ramas
+    // case x of
+    //     p: Perro => "Guau";
+    //     g: Perro => "Error";  -- Perro está repetido
+    // esac
     for (int i = 0; i < branch_types.size() - 1; ++i) {
         for (int j = i + 1; j < branch_types.size(); ++j) {
             if (branch_type_decls[i] == branch_type_decls[j]) {
@@ -773,7 +876,7 @@ Symbol typcase_class::CheckExprType() {
             }
         }
     }
-
+    //Verificar que los tipos de retorno y los tipos declarados tengan ancestro común, o sea, sean válidos.
     type = branch_types[0];
     for (int i = 1; i < branch_types.size(); ++i) {
         type = classtable->FindCommonAncestor(type, branch_types[i]);
@@ -798,6 +901,7 @@ Symbol branch_class::CheckBranchType() {
     return type;
 }
 
+//Obtiene el tipo de la última expresión en el bloque
 Symbol block_class::CheckExprType() {
     for (int i = body->first(); body->more(i); i = body->next(i)) {
         type = body->nth(i)->CheckExprType();
@@ -813,26 +917,36 @@ Symbol block_class::CheckExprType() {
 // Expression body;
 // 
 Symbol let_class::CheckExprType() {
+    // Verifica que el identificador no sea 'self', ya que 'self' no puede ser redefinido
     if (identifier == self) {
         classtable->semant_error(curr_class) << "Error! self in let binding." << std::endl;
     }
 
-    // add a new id into the environment
+    // Crea un nuevo scope para la variable declarada en el 'let'
     attribtable.enterscope();
+
+    // Agrega la variable a la tabla de atributos con su tipo declarado
     attribtable.addid(identifier, new Symbol(type_decl));
 
+    // Obtiene el tipo de la expresión de inicialización (si existe)
     Symbol init_type = init->CheckExprType();
-    // if there is an initialization expression
+
+    // Si hay una expresión de inicialización, verifica que sea un subtipo válido
     if (init_type != No_type) {
         if (classtable->CheckInheritance(type_decl, init_type) == false) {
             classtable->semant_error(curr_class) << "Error! init value is not child." << std::endl;
         }
     }
 
+    // Evalúa el tipo del cuerpo del 'let'
     type = body->CheckExprType();
+
+    // Sale del scope del 'let', eliminando la variable de la tabla de atributos
     attribtable.exitscope();
+    
     return type;
 }
+
 
 Symbol plus_class::CheckExprType() {
     Symbol e1_type = e1->CheckExprType();
@@ -881,7 +995,7 @@ Symbol divide_class::CheckExprType() {
     }
     return type;
 }
-
+//Negación por bits
 Symbol neg_class::CheckExprType() {
     if (e1->CheckExprType() != Int) {
         classtable->semant_error(curr_class) << "Error! '~' meets non-Int value." << std::endl;
@@ -935,7 +1049,7 @@ Symbol leq_class::CheckExprType() {
     }
     return type;
 }
-
+//Negación lógica
 Symbol comp_class::CheckExprType() {
     if (e1->CheckExprType() != Bool) {
         classtable->semant_error(curr_class) << "Error! 'not' meets non-Bool value." << std::endl;
@@ -962,12 +1076,17 @@ Symbol string_const_class::CheckExprType() {
 }
 
 Symbol new__class::CheckExprType() {
+    // Verifica si la clase instanciada existe en la tabla de clases
+    // Se permite SELF_TYPE sin validación adicional, ya que representa la clase actual en tiempo de ejecución
     if (type_name != SELF_TYPE && classtable->m_classes.find(type_name) == classtable->m_classes.end()) {
         classtable->semant_error(curr_class) << "Error! type " << type_name << " doesn't exist." << std::endl;
     }
+
     type = type_name;
+
     return type;
 }
+
 
 Symbol isvoid_class::CheckExprType() {
     e1->CheckExprType();
@@ -1010,18 +1129,18 @@ Symbol object_class::CheckExprType() {
 void program_class::semant() {
     initialize_constants();
 
-    // ClassTable constructor may do some semantic analysis
+    // Se crea una tabla de clases
     classtable = new ClassTable(classes);
 
+    // Si hubo errores en la construcción de la tabla de clases, se detiene la compilación.
     if (classtable->errors()) {
         cerr << "Compilation halted due to static semantic errors." << endl;
         exit(1);
     }
 
-    // Pass through every method in every class, construct the methodtables.
     log << "Now constructing the methodtables:" << std::endl;
 
-    // std::map<Symbol, Class_> m_classes;
+    //Recorrer las clases y crear las methodtables
     for (std::map<Symbol, Class_>::iterator iter = classtable->m_classes.begin(); iter != classtable->m_classes.end(); ++iter) {
         log << "class " << iter->first << ":" << std::endl;
 
@@ -1034,13 +1153,12 @@ void program_class::semant() {
         }
     }
 
-    // Now find illegal method overriding.
     log << "Now searching for illegal method overriding:" << std::endl;
 
-    // Iterate over all classes
+    // Recorrer todas las clases y verificar si redefinen métodos heredados. 
     for (std::map<Symbol, Class_>::iterator iter = classtable->m_classes.begin(); iter != classtable->m_classes.end(); ++iter) {
         
-        // For some class, grab all its methods.
+        // Para una clase, obtener todos los métodos.
         Symbol class_name = iter->first;
         curr_class = classtable->m_classes[class_name];
         log << "    Consider class " << class_name << ":" << std::endl;
@@ -1049,7 +1167,7 @@ void program_class::semant() {
 
         for (int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j)) {
             
-            // We are checking one method of a class.
+            // Verificar método de la iteración actual.
             Feature curr_method = curr_features->nth(j);
 
             if (curr_method->IsMethod() == false) {
@@ -1061,7 +1179,7 @@ void program_class::semant() {
             Formals curr_formals = ((method_class*)(curr_method))->GetFormals();
             
             std::list<Symbol> path = classtable->GetInheritancePath(class_name);
-            // We are checking every method with the same name in the ancestors
+            // Verificar el método actual con los métodos, con el mismo nombre, de los ancestros.
             for (std::list<Symbol>::reverse_iterator iter = path.rbegin(); iter != path.rend(); ++iter) {
                 
                 Symbol ancestor_name = *iter;
@@ -1069,7 +1187,7 @@ void program_class::semant() {
                 method_class* method = methodtables[ancestor_name].lookup(curr_method->GetName());
                 
                 if (method != NULL) {
-                    // A method is found.
+                    //Si encontramos ese método, verificamos sus parámetros
                     Formals formals = method->GetFormals();
 
                     int k1 = formals->first(), k2 = curr_formals->first();
@@ -1091,16 +1209,18 @@ void program_class::semant() {
 
     log << std::endl;
     
-    // Let's start checking all the types.
+    //Verificamos los tipos
     log << "Now checking all the types:" << std::endl;
-
+    //Recorrer todas las clases y los atributos
     for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
         curr_class = classes->nth(i);
 
         log << "Checking class " << curr_class->GetName() << ":" << std::endl;
 
-        // Get the inheritance path, add all the attributes.
+        // Revisar la herencia la clase actual
         std::list<Symbol> path = classtable->GetInheritancePath(curr_class->GetName());
+
+        // Recorrer cada ancestro de la clase y verificar sus atributos
         for (std::list<Symbol>::iterator iter = path.begin(); iter != path.end(); iter++) {
             curr_class = classtable->m_classes[*iter];
             Features curr_features = curr_class->GetFeatures();
@@ -1111,15 +1231,16 @@ void program_class::semant() {
             }
         }
         
+        // Restablecer la clase actual
         curr_class = classes->nth(i);
         Features curr_features = curr_class->GetFeatures();
 
-        // Check all features.
+        // Verificar cada atributo y método de la clase actual
         for (int j = curr_features->first(); curr_features->more(j); j = curr_features->next(j)) {
             Feature curr_feature = curr_features->nth(j);
             curr_feature->CheckFeatureType();
         }
-
+        //Salir del scope de cada ancestro
         for (int j = 0; j < path.size(); ++j) {
             attribtable.exitscope();
         }
@@ -1127,6 +1248,7 @@ void program_class::semant() {
         log << std::endl;
     }
 
+    // Si hubo errores durante el análisis semántico, se detiene la compilación
     if (classtable->errors()) {
         cerr << "Compilation halted due to static semantic errors." << endl;
         exit(1);

@@ -21,6 +21,8 @@ typedef ClassTable *ClassTableP;
 // you like: it is only here to provide a container for the supplied
 // methods.
 
+//Partes extraídas de: https://github.com/skyzluo/CS143-Compilers-Stanford
+
 class ClassTable {
 private:
 	int semant_errors; //Número de errores semánticos
